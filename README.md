@@ -35,6 +35,37 @@
 * Integrate all project modules.
 * Test the application and fix integration issues.
 
+## Project Demos
+
+### Windows Demos
+
+**Demo 1 — 25% Progress**
+
+Initial development stage of the Windows Task Manager.
+
+**Demo 2 — 40% Progress**
+
+Intermediate development stage with additional features.
+
+**Demo 3 — 75% Progress**
+
+Updated Windows version with improved process management and system monitoring.
+
+**Implemented Features:**
+- Process listing and PID display
+- CPU and RAM monitoring
+- Process searching and filtering
+- Process details
+- Process termination with user confirmation
+- Automatic refresh every 2 seconds
+
+**Demo Files:**
+- Python source code
+- Application screenshot
+
+### Current Status
+
+Both Windows and macOS versions are under development. Cross-platform integration and testing are ongoing.
 ### Description
 A GUI-based system performance and process management tool written in Python using `PyQt6` and `psutil`.
 
