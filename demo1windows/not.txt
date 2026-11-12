@@ -1,0 +1,3 @@
+Başlangıç olarak customtkinter ile mini bir Task Manager kurdum; henüz demonun da demosu yani. Fikirlerinizi wp grubundan yazarsınız. Gerçek zamanlı RAM ve CPU verilerini şimdilik temsili girdim (fotoğraf olduğu için hareket gözükmüyor fakat değerler 2 saniyede bir otomatik yenileniyor). Proje için asıl verileri Yağmur ilerleyen zamanlarda iletir, projenin henüz acelesi yok zaten.
+
+Görevi Sonlandır kısmı ise şöyle çalışıyor: Listeden bir sekme seçiyorsunuz; Sonlandır dediğinizde bir onay uyarısı geliyor, tekrar onaylarsanız uygulama sonlandırılmış oluyor. 
