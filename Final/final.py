@@ -15,6 +15,7 @@ v1.4 değişiklikleri
 """
 
 import csv
+import html
 import math
 import os
 import sys
@@ -795,6 +796,8 @@ class TaskManagerWindow(QMainWindow):
             val = QLabel("—")
             val.setObjectName("value")
             val.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+            # işlem adı vb. dışarıdan gelir: HTML olarak yorumlanmasın (renkli Durum hariç)
+            val.setTextFormat(Qt.TextFormat.RichText if key == "status" else Qt.TextFormat.PlainText)
             # uzun değer pencereyi genişletmesin; tam metin tooltip'te
             val.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
             grid.addWidget(cap, r, pair * 2)
@@ -1275,7 +1278,9 @@ class TaskManagerWindow(QMainWindow):
         }
         for key, text in values.items():
             self.detail_values[key].setText(text)
-            self.detail_values[key].setToolTip(text)
+            # tooltip her zaman zengin metin: dış veriyi kaçışla göster
+            self.detail_values[key].setToolTip(
+                text if key == "status" else f"<p>{html.escape(text)}</p>")
         join = subprocess.list2cmdline if IS_WINDOWS else shlex.join
         for line, text in ((self.lbl_exe, exe or "Erişim yok / yok"),
                            (self.lbl_cmdline, join(cmdline) if cmdline else "Erişim yok / yok")):
