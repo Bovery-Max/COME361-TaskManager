@@ -1,0 +1,34 @@
+Selam, 3. demodan sonra yaptığım değişiklikleri ve projenin son halini özetliyorum.
+
+Final klasöründe iki kod dosyası var: final.py arayüz, process_ops.py ise işlemleri listeleyen, sonlandıran ve başlatan backend. İkisi aynı klasörde durmalı, final.py process_ops.py'yi oradan alıyor. Çalıştırmak için:
+    pip install PyQt6 psutil
+    python Final/final.py
+
+3. demoda kod uzadığı için çıkardığımı söylediğim özellikleri geri koydum: işlem ağacı (Parent -> Child), sağ tık menüsü, öncelik değiştirme ve kısayollar (Delete: sonlandır, Ctrl+F: ara, F5: yenile, Ctrl+S: CSV'ye kaydet).
+
+Yeni eklediklerim:
+
+Performans sekmesi. Her çekirdek için ayrı CPU grafiği, disk ve ağ hızı grafikleri var. Üstte de sistem özeti duruyor: toplam işlem ve thread sayısı, bilgisayarın ne kadar süredir açık olduğu, swap kullanımı, saniyedeki bağlam değişimi ve kesme (interrupt) sayısı. Bunlar dersteki konularla birebir örtüşüyor, sunumda göstermek iyi olur.
+
+Tabloya Kullanıcı, Disk (KB/sn) ve Thread sütunları eklendi. Arama artık kullanıcı adında da çalışıyor. CPU, bellek ve disk hücreleri yük arttıkça turuncuya dönüyor, Windows Görev Yöneticisi'ndeki gibi.
+
+Sağ tık menüsünde yeni seçenekler var: işlem ağacını sonlandır (alt işlemlerle birlikte), CPU affinity (işlemi hangi çekirdeklerin çalıştıracağını seçmek) ve dosya konumunu aç. Ağaç sonlandırmada önce alt işlemler, en son ana işlem kapatılıyor; böylece ana işlem kapanan alt işlemi yeniden başlatamıyor.
+
+Alttaki detay paneli artık sekmeli: Genel, Kaynaklar (bellek ayrıntısı, bağlam değişimi, kullanıcı/çekirdek modunda geçen CPU süresi), Açık Dosyalar ve Ağ Bağlantıları. Ağır bilgiler sadece o sekme açıkken okunuyor, uygulama yavaşlamıyor.
+
+Görünen listeyi CSV olarak dışa aktarabiliyorsun. Dosya Türkçe Excel'de düzgün açılıyor.
+
+Arayüzde son düzenlemeler:
+- Pencere artık ekranın yaklaşık %70'i kadar açılıyor ve ortalanıyor, ekranı kaplamıyor.
+- Detay paneli küçüldü. Askıya Al ve Görevi Sonlandır butonları sekmelerin yanına taşındı, bilgiler satır başına 4 alan olarak dizildi, uzun komutlar tek satırda kalıyor. Böylece işlem listesine daha fazla yer kaldı.
+- Liste ile detay paneli arasındaki çizgiyi sürükleyerek boyutları ayarlayabilirsin.
+- Performans sekmesine geçince üstteki CPU/RAM grafikleri ve detay paneli gizleniyor, çünkü orada gereksizler.
+
+Arka planda düzelttiklerim:
+- Windows'ta Parent PID'ler tek seferde alınıyor. Her işlem için ayrı ayrı sormak veri toplamayı çok yavaşlatıyordu.
+- Uygulama, veri toplanırken kapatılırsa hata verip kapanabiliyordu, düzelttim.
+- Tekrar eden kodları temizledim. Korunan sistem işlemlerinin listesi (PID 0, 1, 4 ve uygulamanın kendisi) artık sadece process_ops.py'de duruyor.
+
+Bilinen bir not: Windows'ta bir ölçüm yaklaşık 3 saniye sürüyor (alt bilgi satırında yazıyor). Arayüz bu sırada donmuyor, çünkü veri toplama ayrı bir thread'de çalışıyor. Ama yenileme aralığını 1 saniye seçsen bile veriler en fazla bu hızda güncelleniyor.
+
+Kodu Windows'ta denedim. macOS ve Linux'ta henüz denemedik; bir deneyen olursa hata çıktısını grupta paylaşsın.

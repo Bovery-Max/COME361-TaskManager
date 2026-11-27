@@ -1,7 +1,7 @@
 # COME 361 - Operating Systems Term Project
 ## Process & System Performance Monitor (Mini Task Manager)
 
-![Task Manager Lite](docs/screenshot.png)
+![Task Manager Lite - Final](Final/screenshot.png)
 
 ### Group Members
 * Emir Sanal
@@ -65,9 +65,30 @@ Updated Windows version with improved process management and system monitoring.
 - Python source code
 - Application screenshot
 
+**Final — 100% (Task Manager Lite v1.4)**
+
+The final version is in the [`Final/`](Final/) folder:
+- `final.py` — GUI (PyQt6)
+- `process_ops.py` — backend: process listing, termination, starting
+- `NotFinal.txt` — notes for the team on what changed since Demo 3 (Turkish)
+- `screenshot.png` — the final application
+
+**Final Features:**
+- All processes listed with PID, name, user, state, CPU %, memory, disk I/O, threads and parent PID; sortable columns and search by name, PID or user
+- Process tree tab (parent → child hierarchy)
+- Performance tab: per-core CPU graphs, disk and network throughput, uptime, swap, context switches and interrupts per second
+- Live CPU and RAM history graphs
+- Suspend / resume (SIGSTOP / SIGCONT), priority (nice) change, CPU affinity
+- Termination with verification (offers force kill if the process does not exit, detects zombies); terminate a whole process tree
+- Protected system processes (PID 0, 1, 4 and the app itself)
+- Tabbed details panel: general info, resources, open files, network connections
+- CSV export, right-click menu, keyboard shortcuts (Delete, Ctrl+F, F5, Ctrl+S)
+- Data collection runs on a background thread, so the interface never freezes
+
 ### Current Status
 
-Both Windows and macOS versions are under development. Cross-platform integration and testing are ongoing.
+The project is complete. The final version has been tested on Windows; macOS and Linux have not been tested yet.
+
 ### Description
 A GUI-based system performance and process management tool written in Python using `PyQt6` and `psutil`.
 
@@ -81,7 +102,7 @@ A GUI-based system performance and process management tool written in Python usi
    ```bash
    pip install PyQt6 psutil
    ```
-2. Run the application:
+2. Run the final version:
    ```bash
-   python main.py
+   python Final/final.py
    ```
