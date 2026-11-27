@@ -174,6 +174,15 @@ def signal_name(kind):
     return win if IS_WINDOWS else posix
 
 
+def _message(icon, parent, title, text, buttons=QMessageBox.StandardButton.Ok):
+    """QMessageBox.critical/warning/... yerine: metin düz yazı olarak gösterilir,
+    böylece işlem adlarındaki '<b>' gibi etiketler HTML olarak yorumlanmaz."""
+    box = QMessageBox(icon, title, text, buttons, parent)
+    box.setTextFormat(Qt.TextFormat.PlainText)
+    box.exec()
+    return box.standardButton(box.clickedButton())
+
+
 def _safe(fn, default=None):
     """Tek bir psutil alanını okur; yetki yoksa varsayılanı döner.
     NoSuchProcess (işlem öldü) bilerek yukarı fırlatılır."""
@@ -1344,7 +1353,7 @@ class TaskManagerWindow(QMainWindow):
     def _require_row(self):
         row = self._current_row()
         if row is None:
-            QMessageBox.warning(self, "Uyarı", "Lütfen önce listeden bir işlem seçin.")
+            _message(QMessageBox.Icon.Warning, self, "Uyarı", "Lütfen önce listeden bir işlem seçin.")
         return row
 
     def run_new_process(self):
@@ -1357,7 +1366,7 @@ class TaskManagerWindow(QMainWindow):
             parts = [s.strip('"') for s in shlex.split(cmd.strip(), posix=not IS_WINDOWS)]
             new_pid = start_process(parts[0], parts[1:])   # process_ops.start_process(program, args)
         except Exception as e:
-            QMessageBox.critical(self, "Hata", f"İşlem başlatılamadı: {e}")
+            _message(QMessageBox.Icon.Critical, self, "Hata", f"İşlem başlatılamadı: {e}")
             return
         self.statusBar().showMessage(f"'{cmd.strip()}' başlatıldı (PID: {new_pid})", 5000)
         self._selected_pid = new_pid
@@ -1368,7 +1377,7 @@ class TaskManagerWindow(QMainWindow):
         if row is None:
             return
         if row["pid"] in PROTECTED_PIDS:
-            QMessageBox.warning(self, "Engellendi", "Bu sistem işlemi askıya alınamaz.")
+            _message(QMessageBox.Icon.Warning, self, "Engellendi", "Bu sistem işlemi askıya alınamaz.")
             return
         resume = row["status"] == "stopped"
         ok, _ = self._try_process(row, lambda p: p.resume() if resume else p.suspend(),
@@ -1383,7 +1392,7 @@ class TaskManagerWindow(QMainWindow):
 
     def set_priority(self, row, value, label):
         if row["pid"] in PROTECTED_PIDS:
-            QMessageBox.warning(self, "Engellendi", "Bu sistem işleminin önceliği değiştirilemez.")
+            _message(QMessageBox.Icon.Warning, self, "Engellendi", "Bu sistem işleminin önceliği değiştirilemez.")
             return
         ok, _ = self._try_process(row, lambda p: p.nice(value), "Bu önceliği ayarlamak")
         if not ok:
@@ -1395,7 +1404,7 @@ class TaskManagerWindow(QMainWindow):
         row = self._require_row()
         if row is None:
             return
-        reply = QMessageBox.question(
+        reply = _message(QMessageBox.Icon.Question, 
             self, "Onay", f"{row['name']} (PID: {row['pid']}) sonlandırılsın mı?",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
         if reply != QMessageBox.StandardButton.Yes:
@@ -1404,17 +1413,17 @@ class TaskManagerWindow(QMainWindow):
             # Backend: korumalı PID kontrolü + create_time ile PID çakışması doğrulaması
             terminate_process(row["pid"], expected_create_time=row["create_time"])
         except ValueError as ve:
-            QMessageBox.warning(self, "Engellendi", str(ve))
+            _message(QMessageBox.Icon.Warning, self, "Engellendi", str(ve))
             return
         except psutil.AccessDenied:
-            QMessageBox.critical(self, "Yetki Hatası",
+            _message(QMessageBox.Icon.Critical, self, "Yetki Hatası",
                                  f"{row['name']} işlemini sonlandırmak için Yönetici (Admin) yetkisi gerekiyor.")
             return
         except psutil.NoSuchProcess:
-            QMessageBox.warning(self, "Bulunamadı", f"{row['name']} işlemi zaten sonlanmış.")
+            _message(QMessageBox.Icon.Warning, self, "Bulunamadı", f"{row['name']} işlemi zaten sonlanmış.")
             return
         except Exception as e:
-            QMessageBox.critical(self, "Hata", f"İşlem sonlandırılamadı!\nDetay: {e}")
+            _message(QMessageBox.Icon.Critical, self, "Hata", f"İşlem sonlandırılamadı!\nDetay: {e}")
             return
 
         self.statusBar().showMessage(f"{row['name']} için sonlandırma sinyali gönderildi, doğrulanıyor…")
@@ -1433,14 +1442,14 @@ class TaskManagerWindow(QMainWindow):
 
         if status is None:
             self.statusBar().showMessage(f"{name} başarıyla sonlandırıldı.", 5000)
-            QMessageBox.information(self, "Başarılı", f"{name} başarıyla sonlandırıldı.")
+            _message(QMessageBox.Icon.Information, self, "Başarılı", f"{name} başarıyla sonlandırıldı.")
         elif status == "zombie":
-            QMessageBox.information(
+            _message(QMessageBox.Icon.Information, 
                 self, "Zombi İşlem",
                 f"{name} sonlandı ancak şu an ZOMBİ durumunda.\n"
                 "Parent işlem henüz wait() çağırıp çıkış kodunu toplamadı.")
         else:
-            reply = QMessageBox.question(
+            reply = _message(QMessageBox.Icon.Question, 
                 self, "İşlem hâlâ çalışıyor",
                 f"{name} sonlandırma sinyaline (SIGTERM) yanıt vermedi.\n"
                 f"Zorla kapatılsın mı? ({signal_name('kill')})",
@@ -1452,7 +1461,7 @@ class TaskManagerWindow(QMainWindow):
                 except psutil.NoSuchProcess:
                     self.statusBar().showMessage(f"{name} zaten sonlanmış.", 5000)
                 except psutil.AccessDenied:
-                    QMessageBox.critical(self, "Yetki Hatası",
+                    _message(QMessageBox.Icon.Critical, self, "Yetki Hatası",
                                          f"{name} için yönetici (admin) yetkisi gerekiyor.")
         self.request_refresh()
 
@@ -1462,12 +1471,12 @@ class TaskManagerWindow(QMainWindow):
         try:
             return True, fn(self._verified_process(row))
         except psutil.AccessDenied:
-            QMessageBox.critical(self, "Yetki Hatası",
+            _message(QMessageBox.Icon.Critical, self, "Yetki Hatası",
                                  f"{what} için yönetici (admin/root) yetkisi gerekiyor.")
         except psutil.NoSuchProcess:
-            QMessageBox.warning(self, "Bulunamadı", f"{row['name']} işlemi zaten sonlanmış.")
+            _message(QMessageBox.Icon.Warning, self, "Bulunamadı", f"{row['name']} işlemi zaten sonlanmış.")
         except Exception as e:
-            QMessageBox.critical(self, "Hata", f"{what} başarısız oldu.\nDetay: {e}")
+            _message(QMessageBox.Icon.Critical, self, "Hata", f"{what} başarısız oldu.\nDetay: {e}")
         return False, None
 
     def kill_tree(self, row):
@@ -1475,7 +1484,7 @@ class TaskManagerWindow(QMainWindow):
                                      "Alt işlemleri okumak")
         if not ok:
             return
-        reply = QMessageBox.question(
+        reply = _message(QMessageBox.Icon.Question, 
             self, "Onay",
             f"{row['name']} (PID: {row['pid']}) ve {len(kids)} alt işlemi (child) "
             "birlikte sonlandırılsın mı?",
@@ -1485,14 +1494,14 @@ class TaskManagerWindow(QMainWindow):
         try:
             sent, denied = terminate_tree(row["pid"], expected_create_time=row["create_time"])
         except ValueError as ve:
-            QMessageBox.warning(self, "Engellendi", str(ve))
+            _message(QMessageBox.Icon.Warning, self, "Engellendi", str(ve))
             return
         except psutil.AccessDenied:
-            QMessageBox.critical(self, "Yetki Hatası",
+            _message(QMessageBox.Icon.Critical, self, "Yetki Hatası",
                                  f"{row['name']} için yönetici (admin) yetkisi gerekiyor.")
             return
         except psutil.NoSuchProcess:
-            QMessageBox.warning(self, "Bulunamadı", f"{row['name']} işlemi zaten sonlanmış.")
+            _message(QMessageBox.Icon.Warning, self, "Bulunamadı", f"{row['name']} işlemi zaten sonlanmış.")
             return
         self.statusBar().showMessage(
             f"{len(sent)} işleme sonlandırma sinyali gönderildi, doğrulanıyor…")
@@ -1503,11 +1512,11 @@ class TaskManagerWindow(QMainWindow):
         alive = [p for p in sent if p.is_running() and _safe(p.status) != "zombie"]
         note = f"\n{len(denied)} alt işlem için yetki yetmedi, atlandı." if denied else ""
         if not alive:
-            QMessageBox.information(
+            _message(QMessageBox.Icon.Information, 
                 self, "Başarılı",
                 f"{row['name']} ağacındaki {len(sent)} işlem sonlandırıldı.{note}")
         else:
-            reply = QMessageBox.question(
+            reply = _message(QMessageBox.Icon.Question, 
                 self, "Bazı işlemler hâlâ çalışıyor",
                 f"{len(alive)} işlem sonlandırma sinyaline yanıt vermedi.{note}\n"
                 f"Zorla kapatılsınlar mı? ({signal_name('kill')})",
@@ -1523,7 +1532,7 @@ class TaskManagerWindow(QMainWindow):
 
     def set_affinity(self, row):
         if row["pid"] in PROTECTED_PIDS:
-            QMessageBox.warning(self, "Engellendi", "Bu sistem işleminin çekirdek ataması değiştirilemez.")
+            _message(QMessageBox.Icon.Warning, self, "Engellendi", "Bu sistem işleminin çekirdek ataması değiştirilemez.")
             return
         ok, current = self._try_process(row, lambda p: p.cpu_affinity(), "Çekirdek atamasını okumak")
         if not ok:
@@ -1554,7 +1563,7 @@ class TaskManagerWindow(QMainWindow):
 
         chosen = [i for i, b in enumerate(boxes) if b.isChecked()]
         if not chosen:
-            QMessageBox.warning(self, "Uyarı", "En az bir çekirdek seçilmelidir.")
+            _message(QMessageBox.Icon.Warning, self, "Uyarı", "En az bir çekirdek seçilmelidir.")
             return
         ok, _ = self._try_process(row, lambda p: p.cpu_affinity(chosen), "Çekirdek atamasını değiştirmek")
         if ok:
@@ -1567,7 +1576,7 @@ class TaskManagerWindow(QMainWindow):
         if not ok:
             return
         if not exe or not os.path.exists(exe):
-            QMessageBox.information(self, "Bilgi", "Bu işlemin dosya yolu bilinmiyor.")
+            _message(QMessageBox.Icon.Information, self, "Bilgi", "Bu işlemin dosya yolu bilinmiyor.")
             return
         try:
             if IS_WINDOWS:
@@ -1577,7 +1586,7 @@ class TaskManagerWindow(QMainWindow):
             else:
                 subprocess.Popen(["xdg-open", os.path.dirname(exe)])
         except OSError as e:
-            QMessageBox.critical(self, "Hata", f"Dosya konumu açılamadı.\nDetay: {e}")
+            _message(QMessageBox.Icon.Critical, self, "Hata", f"Dosya konumu açılamadı.\nDetay: {e}")
 
     def export_csv(self):
         default = f"islemler_{datetime.now():%Y%m%d_%H%M%S}.csv"
@@ -1593,7 +1602,7 @@ class TaskManagerWindow(QMainWindow):
                 for r in range(count):
                     writer.writerow([self.proxy.index(r, c).data() for c in range(len(COLUMNS))])
         except OSError as e:
-            QMessageBox.critical(self, "Hata", f"Dosya kaydedilemedi.\nDetay: {e}")
+            _message(QMessageBox.Icon.Critical, self, "Hata", f"Dosya kaydedilemedi.\nDetay: {e}")
             return
         self.statusBar().showMessage(f"{count} işlem dışa aktarıldı: {path}", 6000)
 
